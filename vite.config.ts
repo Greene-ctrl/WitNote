@@ -6,6 +6,7 @@ import { resolve } from 'path'
 
 // Windows 构建时禁用 WebLLM（通过环境变量 DISABLE_WEBLLM=true）
 const DISABLE_WEBLLM = process.env.DISABLE_WEBLLM === 'true'
+const IS_WEB = process.env.IS_WEB === 'true'
 
 export default defineConfig({
     define: {
@@ -13,35 +14,37 @@ export default defineConfig({
     },
     plugins: [
         react(),
-        electron([
-            {
-                entry: 'electron/main.ts',
-                onstart(args) {
-                    // 启动 Electron
-                    args.startup()
+        ...(IS_WEB ? [] : [
+            electron([
+                {
+                    entry: 'electron/main.ts',
+                    onstart(args) {
+                        // 启动 Electron
+                        args.startup()
+                    },
+                    vite: {
+                        build: {
+                            outDir: 'dist-electron',
+                            rollupOptions: {
+                                external: ['electron']
+                            }
+                        }
+                    }
                 },
-                vite: {
-                    build: {
-                        outDir: 'dist-electron',
-                        rollupOptions: {
-                            external: ['electron']
+                {
+                    entry: 'electron/preload.ts',
+                    onstart(options) {
+                        options.reload()
+                    },
+                    vite: {
+                        build: {
+                            outDir: 'dist-electron'
                         }
                     }
                 }
-            },
-            {
-                entry: 'electron/preload.ts',
-                onstart(options) {
-                    options.reload()
-                },
-                vite: {
-                    build: {
-                        outDir: 'dist-electron'
-                    }
-                }
-            }
-        ]),
-        renderer()
+            ]),
+            renderer()
+        ])
     ],
     resolve: {
         alias: {

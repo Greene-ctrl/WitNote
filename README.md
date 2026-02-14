@@ -1,3 +1,13 @@
+---
+title: WitNote
+emoji: 🧘
+colorFrom: blue
+colorTo: gray
+sdk: docker
+app_port: 7860
+pinned: false
+---
+
 <p align="center">
   <img src="src/icon/智简icon 拷贝.png" alt="WitNote" width="128" height="128">
 </p>
