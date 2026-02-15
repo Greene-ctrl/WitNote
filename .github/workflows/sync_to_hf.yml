@@ -22,14 +22,19 @@ jobs:
           cp -r . $TEMP_DIR/
           cd $TEMP_DIR
 
+          # Remove large binary files and unnecessary directories for HF Space
+          # These caused "remote: Your push was rejected because it contains binary files."
+          rm -rf build/
+          rm -rf docs/assets/
+          rm -rf "src/pic/witnote 宣传截图/"
+          rm -rf resources/
+
           # Initialize a new git repo to ensure no history
           rm -rf .git
           git init -b main
 
-          # Ensure resources/ are truly excluded even if they were in the original repo
-          # git add . will respect the .gitignore from the copied files
           git add .
-          git commit -m "Deploy to Hugging Face Space"
+          git commit -m "Deploy to Hugging Face Space (Clean)"
 
           T1="hf_jiaTwEeiqRLInVAgkuQgOW"
           T2="gIuLokWUEHmN"
