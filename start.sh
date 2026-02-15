@@ -9,6 +9,13 @@ export XDG_RUNTIME_DIR=/tmp/runtime-user
 mkdir -p $XDG_RUNTIME_DIR
 chmod 700 $XDG_RUNTIME_DIR
 
+# Nginx temp dirs
+mkdir -p /tmp/nginx/client_body
+mkdir -p /tmp/nginx/proxy_temp
+mkdir -p /tmp/nginx/fastcgi_temp
+mkdir -p /tmp/nginx/uwsgi_temp
+mkdir -p /tmp/nginx/scgi_temp
+
 # Start Xvfb
 echo "Starting Xvfb..."
 Xvfb :99 -screen 0 1400x900x24 &

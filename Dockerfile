@@ -47,6 +47,10 @@ RUN useradd -m -u 1000 user
 ENV HOME=/home/user
 WORKDIR /home/user
 
+# Create vault directory
+RUN mkdir -p /app/vault && chown user:user /app/vault && chmod 777 /app/vault
+ENV VAULT_ROOT=/app/vault
+
 # Clone and build the application from the official repository
 # This avoids git storage and binary file issues in the Hugging Face Space repository
 RUN git clone https://github.com/hooosberg/WitNote.git /home/user/app-source
@@ -60,7 +64,7 @@ USER root
 # Find the .deb file and install it
 RUN apt-get update && apt-get install -y ./release/*.deb || apt-get install -f -y
 
-# Copy configuration and startup files from the build context (pushed to the Space)
+# Copy configuration and startup files from the build context
 WORKDIR /home/user
 COPY --chown=user:user api_server.py .
 COPY --chown=user:user nginx.conf .
