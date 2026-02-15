@@ -5,16 +5,6 @@ set -e
 
 # Setup Display
 export DISPLAY=:99
-export XDG_RUNTIME_DIR=/tmp/runtime-user
-mkdir -p $XDG_RUNTIME_DIR
-chmod 700 $XDG_RUNTIME_DIR
-
-# Nginx temp dirs
-mkdir -p /tmp/nginx/client_body
-mkdir -p /tmp/nginx/proxy_temp
-mkdir -p /tmp/nginx/fastcgi_temp
-mkdir -p /tmp/nginx/uwsgi_temp
-mkdir -p /tmp/nginx/scgi_temp
 
 # Start Xvfb
 echo "Starting Xvfb..."
@@ -27,7 +17,7 @@ do
     sleep 1
 done
 
-# Start Fluxbox (Window Manager)
+# Start Fluxbox
 echo "Starting Fluxbox..."
 fluxbox &
 
@@ -35,23 +25,16 @@ fluxbox &
 echo "Starting x11vnc..."
 x11vnc -display :99 -forever -nopw -listen localhost -xkb &
 
-# Start noVNC proxy on 6080
-echo "Starting noVNC..."
-/opt/noVNC/utils/novnc_proxy --vnc localhost:5900 --listen 6080 &
-
-# Start API server on 7861
-echo "Starting API server..."
-python3 api_server.py &
-
-# Start Nginx on 7860
-echo "Starting Nginx..."
-nginx -c $(pwd)/nginx.conf &
+# Start websockify as the primary web server on port 7860
+# It will serve noVNC static files (including /health and /api/info)
+# and proxy VNC traffic
+echo "Starting websockify on 7860..."
+websockify --web /opt/noVNC 7860 localhost:5900 &
 
 # Start WitNote
-# Use --no-sandbox because we are running in a container
 echo "Starting WitNote..."
 witnote --no-sandbox &
 
 # Keep the script running
-echo "Environment is ready."
+echo "Ready."
 wait
