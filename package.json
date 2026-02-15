@@ -16,6 +16,7 @@
     "build:win:arm64": "DISABLE_WEBLLM=true tsc && DISABLE_WEBLLM=true vite build && electron-builder --win --arm64",
     "build:linux": "DISABLE_WEBLLM=true tsc && DISABLE_WEBLLM=true vite build && electron-builder --linux",
     "preview": "vite preview",
+    "build:web": "tsc && vite build",
     "electron:dev": "concurrently \"vite\" \"wait-on http://localhost:5173 && electron .\""
   },
   "dependencies": {
