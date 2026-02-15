@@ -14,6 +14,23 @@ jobs:
           lfs: true
       - name: Push to hub
         run: |
+          git config --global user.email "actions@github.com"
+          git config --global user.name "GitHub Actions"
+
+          # Create a temporary directory to build the clean state
+          TEMP_DIR=$(mktemp -d)
+          cp -r . $TEMP_DIR/
+          cd $TEMP_DIR
+
+          # Initialize a new git repo to ensure no history
+          rm -rf .git
+          git init -b main
+
+          # Ensure resources/ are truly excluded even if they were in the original repo
+          # git add . will respect the .gitignore from the copied files
+          git add .
+          git commit -m "Deploy to Hugging Face Space"
+
           T1="hf_jiaTwEeiqRLInVAgkuQgOW"
           T2="gIuLokWUEHmN"
-          git push --force https://AUXteam:${T1}${T2}@huggingface.co/spaces/AUXteam/WitNote HEAD:main
+          git push --force https://AUXteam:${T1}${T2}@huggingface.co/spaces/AUXteam/WitNote main:main
