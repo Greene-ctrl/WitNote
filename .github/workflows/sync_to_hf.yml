@@ -13,29 +13,23 @@ jobs:
           fetch-depth: 0
           lfs: true
       - name: Push to hub
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
           git config --global user.email "actions@github.com"
           git config --global user.name "GitHub Actions"
 
-          # Create a temporary directory to build the clean state
+          # Create a clean deployment directory
           TEMP_DIR=$(mktemp -d)
-          cp -r . $TEMP_DIR/
+          cp Dockerfile $TEMP_DIR/
+          cp README.md $TEMP_DIR/
+          cp start.sh $TEMP_DIR/
+          cp api_server.py $TEMP_DIR/
+          cp nginx.conf $TEMP_DIR/
+
           cd $TEMP_DIR
-
-          # Remove large binary files and unnecessary directories for HF Space
-          # These caused "remote: Your push was rejected because it contains binary files."
-          rm -rf build/
-          rm -rf docs/assets/
-          rm -rf "src/pic/witnote 宣传截图/"
-          rm -rf resources/
-
-          # Initialize a new git repo to ensure no history
-          rm -rf .git
           git init -b main
-
           git add .
-          git commit -m "Deploy to Hugging Face Space (Clean)"
+          git commit -m "Deploy WitNote with VNC and API support"
 
-          T1="hf_jiaTwEeiqRLInVAgkuQgOW"
-          T2="gIuLokWUEHmN"
-          git push --force https://AUXteam:${T1}${T2}@huggingface.co/spaces/AUXteam/WitNote main:main
+          git push --force https://AUXteam:$HF_TOKEN@huggingface.co/spaces/AUXteam/WitNote main:main

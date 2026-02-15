@@ -1,44 +1,76 @@
-# Stage 1: Build the frontend
-FROM node:20-slim AS build-stage
-WORKDIR /app
-COPY package.json ./
-# Use npm install
-RUN npm install
-COPY . .
-# Set IS_WEB=true for the build
-ENV IS_WEB=true
-RUN npm run build:web
+# Use Ubuntu 22.04 as base
+FROM ubuntu:22.04
 
-# Stage 2: Serve with FastAPI
-FROM python:3.10-slim
-WORKDIR /app
+# Prevent interactive prompts during installation
+ENV DEBIAN_FRONTEND=noninteractive
 
-# Install system dependencies
+# Update and install basic dependencies
 RUN apt-get update && apt-get install -y \
     curl \
+    git \
+    xvfb \
+    x11vnc \
+    fluxbox \
+    websockify \
+    nginx \
+    python3-pip \
+    libnss3 \
+    libatk1.0-0 \
+    libatk-bridge2.0-0 \
+    libcups2 \
+    libdrm2 \
+    libgtk-3-0 \
+    libgbm1 \
+    libasound2 \
+    x11-xserver-utils \
+    wget \
+    ca-certificates \
+    gnupg \
+    build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-# Install python dependencies
-RUN pip install fastapi uvicorn requests pydantic
+# Install FastAPI and Uvicorn for health/info API
+RUN pip3 install fastapi uvicorn
 
-# Copy built frontend
-COPY --from=build-stage /app/dist /app/dist
+# Install Node.js 20
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get install -y nodejs
 
-# Copy backend
-COPY server.py /app/server.py
-# web-bridge.js is already in /app/dist because it was in public/ during build
+# Setup noVNC
+RUN mkdir -p /opt/noVNC && \
+    git clone https://github.com/novnc/noVNC.git /opt/noVNC && \
+    git clone https://github.com/novnc/websockify /opt/noVNC/utils/websockify && \
+    ln -s /opt/noVNC/vnc.html /opt/noVNC/index.html
 
-# Create vault directory
-RUN mkdir -p /app/vault && chmod 777 /app/vault
-
-# Non-root user
+# Create a non-root user
 RUN useradd -m -u 1000 user
+ENV HOME=/home/user
+WORKDIR /home/user
+
+# Clone and build the application from the official repository
+# This avoids git storage and binary file issues in the Hugging Face Space repository
+RUN git clone https://github.com/hooosberg/WitNote.git /home/user/app-source
+WORKDIR /home/user/app-source
+RUN npm install
+# Build the Linux package
+RUN npm run build:linux
+
+# Install the built .deb package as root
+USER root
+# Find the .deb file and install it
+RUN apt-get update && apt-get install -y ./release/*.deb || apt-get install -f -y
+
+# Copy configuration and startup files from the build context (pushed to the Space)
+WORKDIR /home/user
+COPY --chown=user:user api_server.py .
+COPY --chown=user:user nginx.conf .
+COPY --chown=user:user start.sh .
+RUN chmod +x start.sh
+
+# HF Spaces requirements
 USER user
-ENV HOME=/home/user \
-    PATH=/home/user/.local/bin:$PATH \
-    VAULT_ROOT=/app/vault
+ENV DISPLAY=:99
+EXPOSE 7860
 
-WORKDIR /app
-
-# Start the server
-CMD ["python", "server.py"]
+# Launch using the startup script
+CMD ["/home/user/start.sh"]
